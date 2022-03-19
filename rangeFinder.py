@@ -26,12 +26,12 @@ class RangeFinderBase(ABC):
         self.k_phase = 0
 
     @abstractmethod
-    def get_sample(self, dist):
+    def get_sample(self, path):
         pass
 
-    def find_range(self, cal_mode, init_dist, dist):
+    def find_range(self, cal_mode, init_dist, path):
         # get sample of S21 phase across BW, unwrap value
-        phase = self.get_sample(dist)
+        phase = self.get_sample(path)
         phase_unwrapped = np.unwrap(phase, period=360)
         phase_unwrapped += phase[self.center] - phase_unwrapped[self.center]
 
@@ -54,7 +54,7 @@ class RangeFinderBase(ABC):
             r_phase = (r_phase + (self.wl_c / 2)) % self.wl_c - (self.wl_c / 2)  # wrap from (-wl_c/2, wl_c/2)
 
         # find range by combining center phase and R_diff
-        n = max((r_fsk - r_phase) / self.wl_c, 0)  # approximate range in integer number of wavelengths
+        n = max((r_fsk - r_phase) / self.wl_c, 0)  # approximate range in number of wavelengths
         r_tot = r_phase + round(n) * self.wl_c
 
         return [r_fsk, r_phase, r_tot, n, phase_diff, phase_cent]
@@ -67,13 +67,12 @@ class RangeFinderCSV(RangeFinderBase):
     # bw: bandwidth in Hz
     # points: number of sample points
     # file_path: path to csv file "{file_path}_{dist}cm.csv with recorded data
-    def __init__(self, f_c, bw, points, file_path):
+    def __init__(self, f_c, bw, points):
         super().__init__(f_c, bw, points)
-        self.file_path = file_path
 
     # converts csv files (expected {frequency, phase} for each row) into np array of phases
-    def get_sample(self, dist):
-        with open(f'{self.file_path}_{dist}cm.csv') as csvFile:
+    def get_sample(self, path):
+        with open(path) as csvFile:
             file = csv.reader(csvFile, delimiter=',')
             data = []
             for row in file:
@@ -96,7 +95,7 @@ class RangeFinderVNA(RangeFinderBase):
         super().__init__(f_c, bw, points)
         self.vna_reader = VNAReader(f_c, bw, points, power, resource)
 
-    def get_sample(self, dist):
+    def get_sample(self, path):
         return self.vna_reader.get_sample()
 
 
@@ -109,6 +108,10 @@ class VNAReader:
     # power: VNA transmit power in dBm
     # resource: VNA's resource code, use pyvisa.ResourceManager().list_resources() to find connected instruments
     def __init__(self, f_c, bw, points, power, resource):
+        self.f_c = f_c
+        self.bw = bw
+        self.points = points
+
         # setup vna connection
         self.rm = pyvisa.ResourceManager()
         self.vna = self.rm.open_resource(resource)
@@ -149,10 +152,10 @@ class VNAReader:
     # TODO: test this function in particular for compatibility with RangeFinderCSV's get_sample()
     def save_sample(self, filename):
         phases = self.get_sample()
-        freqs = np.linspace(self.f_c - self.bw / 2, self.f_c + self.bw / 2, num=self.points)
+        freqs = np.linspace(self.f_c - self.bw / 2, self.f_c + self.bw / 2, num=self.points)/1e9
 
         data = np.concatenate(([freqs], [phases]), axis=0).T
-        with open(filename, 'w') as csvfile:
+        with open(filename, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
-            csvwriter.writerow(['Frequency (Hz)', 'Phase (deg)'])
+            csvwriter.writerow(['Frequency (GHz)', 'Phase (deg)'])
             csvwriter.writerows(data)
