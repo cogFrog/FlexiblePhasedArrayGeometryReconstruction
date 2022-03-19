@@ -10,7 +10,7 @@ class RangeFinderBase(ABC):
     # RangeFinderBase is abstract class defining basic range finder behavior, implements algorithm in one place.
     #
     # f_c: center frequency in Hz
-    # BW: bandwidth in Hz
+    # bw: bandwidth in Hz
     # points: number of sample points
     def __init__(self, f_c, bw, points):
         self.f_c = f_c
@@ -64,13 +64,14 @@ class RangeFinderCSV(RangeFinderBase):
     # RangeFinderCSV reads phase data from a csv file for use in distance estimation
     #
     # f_c: center frequency in Hz
-    # BW: bandwidth in Hz
+    # bw: bandwidth in Hz
     # points: number of sample points
     # file_path: path to csv file "{file_path}_{dist}cm.csv with recorded data
     def __init__(self, f_c, bw, points, file_path):
         super().__init__(f_c, bw, points)
         self.file_path = file_path
 
+    # converts csv files (expected {frequency, phase} for each row) into np array of phases
     def get_sample(self, dist):
         with open(f'{self.file_path}_{dist}cm.csv') as csvFile:
             file = csv.reader(csvFile, delimiter=',')
@@ -87,13 +88,27 @@ class RangeFinderVNA(RangeFinderBase):
     # RangeFinderVNA reads phase data directly from VNA for use in distance estimation
     #
     # f_c: center frequency in Hz
-    # BW: bandwidth in Hz
+    # bw: bandwidth in Hz
     # points: number of sample points
     # power: VNA transmit power in dBm
     # resource: VNA's resource code, use pyvisa.ResourceManager().list_resources() to find connected instruments
     def __init__(self, f_c, bw, points, power, resource):
         super().__init__(f_c, bw, points)
+        self.vna_reader = VNAReader(f_c, bw, points, power, resource)
 
+    def get_sample(self, dist):
+        return self.vna_reader.get_sample()
+
+
+class VNAReader:
+    # RangeFinderVNA reads phase data directly from VNA for use in distance estimation
+    #
+    # f_c: center frequency in Hz
+    # bw: bandwidth in Hz
+    # points: number of sample points
+    # power: VNA transmit power in dBm
+    # resource: VNA's resource code, use pyvisa.ResourceManager().list_resources() to find connected instruments
+    def __init__(self, f_c, bw, points, power, resource):
         # setup vna connection
         self.rm = pyvisa.ResourceManager()
         self.vna = self.rm.open_resource(resource)
@@ -125,7 +140,19 @@ class RangeFinderVNA(RangeFinderBase):
         # short delay allows values to settle
         time.sleep(0.5)
 
-    def get_sample(self, dist):
+    def get_sample(self):
         self.vna.write("CALCulate1:PARameter:SELect 'meas'")
         self.vna.write("FORMat:DATA REAL,64")
         return np.array(self.vna.query_binary_values("CALCulate1:DATA? FDATA", datatype='d', is_big_endian=True))
+
+    # Takes a sample and saves it in a CSV file for future use. Each column follows {frequency, phase} format
+    # TODO: test this function in particular for compatibility with RangeFinderCSV's get_sample()
+    def save_sample(self, filename):
+        phases = self.get_sample()
+        freqs = np.linspace(self.f_c - self.bw / 2, self.f_c + self.bw / 2, num=self.points)
+
+        data = np.concatenate(([freqs], [phases]), axis=0).T
+        with open(filename, 'w') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerow(['Frequency (Hz)', 'Phase (deg)'])
+            csvwriter.writerows(data)
