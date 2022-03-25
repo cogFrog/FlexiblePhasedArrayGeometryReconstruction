@@ -11,10 +11,11 @@ class RangeFinderBase(ABC):
     #
     # f_c: center frequency in Hz
     # bw: bandwidth in Hz
-    # points: number of sample points
+    # points: number of sample points used
     def __init__(self, f_c, bw, points):
         self.f_c = f_c
         self.bw = bw
+        self.points = points
         self.c = scipy.constants.c
         self.wl_c = self.c / self.f_c
 
@@ -75,11 +76,15 @@ class RangeFinderCSV(RangeFinderBase):
         with open(path) as csvFile:
             file = csv.reader(csvFile, delimiter=',')
             data = []
+            next(file, None) # skip header
             for row in file:
                 try:
                     data.append(float(row[1]))
                 except ValueError:
-                    print("")
+                    print(f"Error: could not read line:")
+        margin = int((len(data) - self.points) / 2)
+        data = np.array(data)
+        data = data[margin:len(data) - margin]
         return np.array(data)
 
 
