@@ -7,7 +7,7 @@ import numpy as np
 freq = {}
 phase = {}
 
-with open('distC_s12.csv') as csvFile:
+with open('distD_s12.csv') as csvFile:
     file = csv.reader(csvFile, delimiter=',')
     next(file, None)  # skip header
     for row in file:

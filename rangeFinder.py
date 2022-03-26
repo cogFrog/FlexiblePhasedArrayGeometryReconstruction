@@ -56,7 +56,7 @@ class RangeFinderBase(ABC):
 
         # find range by combining center phase and R_diff
         n = max((r_fsk - r_phase) / self.wl_c, 0)  # approximate range in number of wavelengths
-        r_tot = r_phase + round(n) * self.wl_c
+        r_tot = max(r_phase + round(n) * self.wl_c, 0)
 
         return [r_fsk, r_phase, r_tot, n, phase_diff, phase_cent]
 
@@ -85,6 +85,7 @@ class RangeFinderCSV(RangeFinderBase):
         margin = int((len(data) - self.points) / 2)
         data = np.array(data)
         data = data[margin:len(data) - margin]
+        print(len(data))
         return np.array(data)
 
 
