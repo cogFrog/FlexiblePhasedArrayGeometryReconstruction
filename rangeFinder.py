@@ -85,7 +85,6 @@ class RangeFinderCSV(RangeFinderBase):
         margin = int((len(data) - self.points) / 2)
         data = np.array(data)
         data = data[margin:len(data) - margin]
-        print(len(data))
         return np.array(data)
 
 
