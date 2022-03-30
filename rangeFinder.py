@@ -30,7 +30,7 @@ class RangeFinderBase(ABC):
     def get_sample(self, path):
         pass
 
-    def find_range(self, cal_mode, init_dist, path):
+    def find_range(self, cal_mode, init_dist, path, max_output):
         # get sample of S21 phase across BW, unwrap value
         phase = self.get_sample(path)
         phase_unwrapped = np.unwrap(phase, period=360)
@@ -43,7 +43,7 @@ class RangeFinderBase(ABC):
             self.k_fsk = ((phase_diff * self.c) / (360 * self.bw)) - init_dist
         else:
             r_fsk = ((phase_diff * self.c) / (360 * self.bw)) - self.k_fsk
-            r_fsk = max(r_fsk, 0)
+            r_fsk = min(max(r_fsk, 0), max_output)
 
         # find phase range (distance from the nearest wavelength multiple)
         phase_cent = phase_unwrapped[self.center]  # get middle sample
@@ -57,6 +57,8 @@ class RangeFinderBase(ABC):
         # find range by combining center phase and R_diff
         n = max((r_fsk - r_phase) / self.wl_c, 0)  # approximate range in number of wavelengths
         r_tot = max(r_phase + round(n) * self.wl_c, 0)
+        #if (r_tot > max_output):
+        #    r_tot = 2 * max_output - r_tot
 
         return [r_fsk, r_phase, r_tot, n, phase_diff, phase_cent]
 
