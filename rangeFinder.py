@@ -70,25 +70,39 @@ class RangeFinderCSV(RangeFinderBase):
     # bw: bandwidth in Hz
     # points: number of sample points
     # file_path: path to csv file "{file_path}_{dist}cm.csv with recorded data
-    def __init__(self, f_c, bw, points):
+    def __init__(self, f_c, bw, points, average_mode):
         super().__init__(f_c, bw, points)
+        self.average_mode = average_mode
 
     # converts csv files (expected {frequency, phase} for each row) into np array of phases
     def get_sample(self, path):
-        with open(path) as csvFile:
-            file = csv.reader(csvFile, delimiter=',')
-            data = []
-            next(file, None) # skip header
-            for row in file:
-                try:
-                    data.append(float(row[1]))
-                except ValueError:
-                    print(f"Error: could not read line:")
+        if (self.average_mode):
+            with open(path) as csvFile:
+                file = csv.reader(csvFile, delimiter=',')
+                data = []
+                next(file, None) # skip header
+                for row in file:
+                    try:
+                        data.append(float(row[1]))
+                    except ValueError:
+                        print(f"Error: could not read line:")
+        else:
+            with open(path) as csvFile:
+                file = csv.reader(csvFile, delimiter=',')
+                data = []
+                next(file, None)  # skip header
+                for row in file:
+                    try:
+                        array = np.array(row[1:])
+                        array = array.astype(float)
+                        ave = np.average(array)
+                        data.append(ave)
+                    except ValueError:
+                        print(f"Error: could not read line:")
         margin = int((len(data) - self.points) / 2)
         data = np.array(data)
         data = data[margin:len(data) - margin]
         return np.array(data)
-
 
 class RangeFinderVNA(RangeFinderBase):
     # RangeFinderVNA reads phase data directly from VNA for use in distance estimation
@@ -142,7 +156,7 @@ class VNAReader:
         self.vna.write("CALCulate:PARameter:MODify S21")
         self.vna.write("CALCulate:FORMat PHASe")
         self.vna.write(f"SENSe1:SWEep:POINts {points}")
-        self.vna.write("SENSe1:AVERage:COUNt 16")
+        self.vna.write("SENSe1:AVERage:COUNt 1")
         self.vna.write("SENSe1:AVERage:CLEar")
         self.vna.write("SENSe1:AVERage:MODE SWEep")
         self.vna.write("SENSe1:AVERage:STATe 1")
@@ -157,11 +171,18 @@ class VNAReader:
 
     # Takes a sample and saves it in a CSV file for future use. Each column follows {frequency, phase} format
     # TODO: test this function in particular for compatibility with RangeFinderCSV's get_sample()
-    def save_sample(self, filename):
-        phases = self.get_sample()
-        freqs = np.linspace(self.f_c - self.bw / 2, self.f_c + self.bw / 2, num=self.points)/1e9
+    def save_sample(self, filename, samples):
+        phases = np.zeros([self.points,samples])
+        data = np.zeros([self.points, samples + 1])
+        freqs = np.linspace(self.f_c - self.bw / 2, self.f_c + self.bw / 2, num=self.points) / 1e9
 
-        data = np.concatenate(([freqs], [phases]), axis=0).T
+        for sample in range(samples):
+            phases[:,sample] =self.get_sample()
+            time.sleep(0.1)
+
+        data[:,0] = freqs
+        data[:, 1:] = phases
+
         with open(filename, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(['Frequency (GHz)', 'Phase (deg)'])

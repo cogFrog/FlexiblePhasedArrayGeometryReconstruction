@@ -2,18 +2,18 @@ import numpy as np
 import rangeFinder as rf
 import matplotlib.pyplot as plt
 
-csv = rf.RangeFinderCSV(10e9, 100e6, 101)
+csv = rf.RangeFinderCSV(10.05e9, 100e6, 201, True)
 
 # calibrate at 100 mm or 0.1 m
-csv.find_range(True, 0.1, f'results\\distanceResultsSMA\\dist_100mm.csv', 1e9)
+csv.find_range(True, 0.1, f'results\\distanceResultsMeas3\\dist_100mm.csv', 1e9)
 
 actual_dist = np.array([*range(20, 191, 10)])
 estimated_dist = []
 estimated_dist_fsk = []
 
-for dist in range(20, 191, 10):
-    estimated_dist.append(csv.find_range(False, 0, f'results\\distanceResultsSMA\\dist_{dist}mm.csv', 1e9)[2]*1000)
-    estimated_dist_fsk.append(csv.find_range(False, 0, f'results\\distanceResultsSMA\\dist_{dist}mm.csv', 1e9)[0] * 1000)
+for dist in actual_dist:
+    estimated_dist.append(csv.find_range(False, 0, f'results\\distanceResultsMeas3\\dist_{dist}mm.csv', 1e9)[2]*1000)
+    estimated_dist_fsk.append(csv.find_range(False, 0, f'results\\distanceResultsMeas3\\dist_{dist}mm.csv', 1e9)[0] * 1000)
 estimated_dist = np.array(estimated_dist)
 estimated_dist_fsk = np.array(estimated_dist_fsk)
 
@@ -26,6 +26,7 @@ plt.figure(1)
 plt.plot(actual_dist, estimated_dist)
 plt.xlabel('Actual Distance (mm)')
 plt.ylabel('Estimated Distance (mm)')
+plt.title('Estimated vs Actual Antenna Spacing')
 plt.grid(True)
 
 plt.figure(2)
@@ -40,6 +41,8 @@ plt.axhline(y=15, color="black", linestyle="--")
 plt.axhline(y=-15, color="black", linestyle="--")
 plt.xlabel('Actual Distance (mm)')
 plt.ylabel('Distance Estimation Error (mm)')
+plt.title('Error in FSK Measurement')
+plt.legend()
 plt.grid(True)
 
 plt.show()
