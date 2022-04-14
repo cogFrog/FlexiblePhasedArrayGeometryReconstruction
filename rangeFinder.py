@@ -76,7 +76,7 @@ class RangeFinderCSV(RangeFinderBase):
 
     # converts csv files (expected {frequency, phase} for each row) into np array of phases
     def get_sample(self, path):
-        if (self.average_mode):
+        if (not self.average_mode):
             with open(path) as csvFile:
                 file = csv.reader(csvFile, delimiter=',')
                 data = []
@@ -95,6 +95,7 @@ class RangeFinderCSV(RangeFinderBase):
                     try:
                         array = np.array(row[1:])
                         array = array.astype(float)
+                        print(np.std(array))
                         ave = np.average(array)
                         data.append(ave)
                     except ValueError:
