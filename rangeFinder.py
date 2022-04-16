@@ -33,7 +33,7 @@ class RangeFinderBase(ABC):
     def find_range(self, cal_mode, init_dist, path, max_output):
         # get sample of S21 phase across BW, unwrap value
         phase = self.get_sample(path)
-        phase_unwrapped = np.unwrap(phase, period=360)
+        phase_unwrapped = np.unwrap(phase, period=360, discont=30)
         phase_unwrapped += phase[self.center] - phase_unwrapped[self.center]
 
         # find range information using FSK radar approach
@@ -95,7 +95,6 @@ class RangeFinderCSV(RangeFinderBase):
                     try:
                         array = np.array(row[1:])
                         array = array.astype(float)
-                        print(np.std(array))
                         ave = np.average(array)
                         data.append(ave)
                     except ValueError:
