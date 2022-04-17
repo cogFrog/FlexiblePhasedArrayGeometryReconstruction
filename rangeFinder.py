@@ -76,11 +76,11 @@ class RangeFinderCSV(RangeFinderBase):
 
     # converts csv files (expected {frequency, phase} for each row) into np array of phases
     def get_sample(self, path):
-        if (not self.average_mode):
+        if not self.average_mode:
             with open(path) as csvFile:
                 file = csv.reader(csvFile, delimiter=',')
                 data = []
-                next(file, None) # skip header
+                next(file, None)  # skip header
                 for row in file:
                     try:
                         data.append(float(row[1]))
@@ -103,6 +103,7 @@ class RangeFinderCSV(RangeFinderBase):
         data = np.array(data)
         data = data[margin:len(data) - margin]
         return np.array(data)
+
 
 class RangeFinderVNA(RangeFinderBase):
     # RangeFinderVNA reads phase data directly from VNA for use in distance estimation
