@@ -33,7 +33,7 @@ class RangeFinderBase(ABC):
     def find_range(self, cal_mode, init_dist, path, max_output):
         # get sample of S21 phase across BW, unwrap value
         phase = self.get_sample(path)
-        phase_unwrapped = np.unwrap(phase, period=360, discont=30)
+        phase_unwrapped = np.unwrap(phase, period=360)
         phase_unwrapped += phase[self.center] - phase_unwrapped[self.center]
 
         # find range information using FSK radar approach
@@ -85,22 +85,27 @@ class RangeFinderCSV(RangeFinderBase):
                     try:
                         data.append(float(row[1]))
                     except ValueError:
-                        print(f"Error: could not read line:")
+                        print(f"Error: could not read line")
         else:
             with open(path) as csvFile:
                 file = csv.reader(csvFile, delimiter=',')
-                data = []
+                data = None
                 next(file, None)  # skip header
                 for row in file:
                     try:
                         array = np.array(row[1:])
                         array = array.astype(float)
-                        ave = np.average(array)
-                        data.append(ave)
+                        if data is None:
+                            data = array
+                        else:
+                            data = np.block([[data], [array]])
                     except ValueError:
-                        print(f"Error: could not read line:")
+                        print(f"Error: could not read line")
+        # ave = np.average(array)
+        # array = array.astype(float)
+        data = np.unwrap(data, period=360, axis=0)
+        data = np.average(data, axis=1)
         margin = int((len(data) - self.points) / 2)
-        data = np.array(data)
         data = data[margin:len(data) - margin]
         return np.array(data)
 

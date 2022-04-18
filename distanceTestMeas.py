@@ -2,7 +2,7 @@ import numpy as np
 import rangeFinder as rf
 import matplotlib.pyplot as plt
 
-csv = rf.RangeFinderCSV(10.05e9, 100e6, 201, False)
+csv = rf.RangeFinderCSV(10.05e9, 100e6, 201, True)
 
 # calibrate at 100 mm or 0.1 m
 folder_path = 'results/distanceResultsMeas4/'
