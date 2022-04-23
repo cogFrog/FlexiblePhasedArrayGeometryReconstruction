@@ -6,10 +6,10 @@ csv = rf.RangeFinderCSV(10.05e9, 100e6, 201, True)
 # csv = rf.RangeFinderCSV(2.498e9, 30e6, 201, True)
 
 # calibrate at 100 mm or 0.1 m
-folder_path = 'results/distanceResultsMeas9/'
-csv.find_range(True, 0.13, f'{folder_path}dist_130mm.csv', 1e9)
+folder_path = 'results/distanceResultsMeas10/'
+csv.find_range(True, 0.10, f'{folder_path}dist_100mm.csv', 1e9)
 
-actual_dist = np.array([*range(130, 191, 10)])
+actual_dist = np.array([*range(20, 191, 10)])
 estimated_dist = []
 estimated_dist_fsk = []
 phase_diff = []
