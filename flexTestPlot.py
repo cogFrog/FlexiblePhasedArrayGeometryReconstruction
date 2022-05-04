@@ -7,7 +7,7 @@ csv = rf.RangeFinderCSV(10e9, 100e6, 101)
 l = 45e-3
 
 # calibrate at 100 mm or 0.1 m
-csv.find_range(True, l, 'results\\flexResults\\flat_s14.csv', l)
+csv.find_range(True, l, 'results\\flexResults\\flat.csv', l)
 
 order = ['40concave', '30concave', '20concave', '10concave', 'flat', '10convex', '20convex', '30convex', '40convex']
 
