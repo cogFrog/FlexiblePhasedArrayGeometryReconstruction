@@ -1,7 +1,7 @@
 import rangeFinder as rf
 import numpy as np
 
-vna = rf.VNAReader(10.05e9, 100e6, 201, 0, 'USB0::0x0957::0x0118::US49010233::0::INSTR')
+vna = rf.VNAReader(2.505e9, 30e6, 201, 0, 'USB0::0x0957::0x0118::US49010233::INSTR')
 # vna = rf.VNAReader(2.498e9, 30e6, 201, 0, 'USB0::0x0957::0x0118::US49010233::0::INSTR')
 
 #for d in range(2,20):
